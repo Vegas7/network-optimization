@@ -10,5 +10,5 @@
 
 ## 一键安装
 ```
-bash <(curl -sL https://raw.githubusercontent.com/yahuisme/network-optimization/main/script.sh)
+bash <(curl -sL https://raw.githubusercontent.com/Vegas7/network-optimization/main/script.sh)
 ```
