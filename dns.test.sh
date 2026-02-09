@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # =================配置区域=================
-DNS_SERVERS=("1.1.1.1" "8.8.8.8") # 加上114对比
-DOMAINS=("youtube.com" "google.com" "reddit.com" "cloudflare.com" "intel.com") # 包含国内外
+DNS_SERVERS=("1.1.1.1" "8.8.8.8")
+DOMAINS=("youtube.com" "google.com" "reddit.com" "cloudflare.com" "intel.com")
 COUNT=5      # 测试次数 (为了快速出结果，改为5次)
 INTERVAL=0.5 # 间隔 (秒)
 # =========================================
