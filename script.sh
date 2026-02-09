@@ -160,9 +160,9 @@ EOF
     add_conf "net.ipv4.tcp_max_tw_buckets" "500000" "允许更多 TIME_WAIT socket 存在"
 
     # 5. TCP Keepalive (快速剔除死链)
-    add_conf "net.ipv4.tcp_keepalive_time" "600" "TCP保活时间 (10分钟)"
-    add_conf "net.ipv4.tcp_keepalive_intvl" "15" "探测间隔"
-    add_conf "net.ipv4.tcp_keepalive_probes" "5" "探测次数"
+    add_conf "net.ipv4.tcp_keepalive_time" "120" "TCP保活时间 (2分钟)"
+    add_conf "net.ipv4.tcp_keepalive_intvl" "20" "探测间隔"
+    add_conf "net.ipv4.tcp_keepalive_probes" "3" "探测次数"
 
     # 6. 连接跟踪 (Conntrack)
     # 如果模块未加载，写入配置可能会报错，这里做个判断（但通常文件写入没问题，是sysctl -p报错）
