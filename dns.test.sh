@@ -190,9 +190,9 @@ confirm_config() {
         echo -e "\n"
         
         echo -e "--------------------------------"
-        read -p "开始进行测试? (Y/N): " confirm
+        read -p "开始进行测试? [Y/n] (默认Y): " confirm
         case $confirm in
-            [Yy]* ) run_benchmark; exit 0 ;;
+            [Yy]*|"" ) run_benchmark; exit 0 ;;
             [Nn]* ) return 1 ;;
             * ) echo "请确认"; sleep 1 ;;
         esac
