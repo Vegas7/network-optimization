@@ -3,17 +3,11 @@
 # ==============================================================================
 # Linux TCP/IP & BBR 智能优化脚本
 #
-# 版本: 2.0.0 (针对代理转发深度优化)
-# 改进日志:
-# - [核心] 启用 tcp_tw_reuse，解决高并发下的端口耗尽问题
-# - [新增] 增加 TCP Keepalive 调优，快速释放死连接
-# - [新增] 增加 UDP 缓冲区优化 (针对 Hysteria/QUIC)
-# - [新增] 引入 tcp_notsent_lowat 降低延迟
-# - [调整] 优化 conntrack 策略，防止表溢出
+# 版本: 3.0 (针对代理转发深度优化)
 # ==============================================================================
 
 # --- 脚本版本号定义 ---
-SCRIPT_VERSION="2.0.0"
+SCRIPT_VERSION="3.0"
 
 set -euo pipefail
 
@@ -51,40 +45,42 @@ get_system_info() {
 
 # --- 动态参数计算函数 (针对转发业务调整) ---
 calculate_parameters() {
-    # 基础连接数设置 - 代理服务器需要更多的连接跟踪
     if [ "$TOTAL_MEM" -le 512 ]; then
         VM_TIER="入门级(≤512MB)"
         RMEM_MAX="16777216"   # 16MB
         WMEM_MAX="16777216"
         TCP_MEM_MAX="16777216"
         SOMAXCONN="4096"
-        FILE_MAX="65535"
-        CONNTRACK_MAX="65536"
+        FILE_MAX="65536"
+        CONNTRACK_MAX="32768"
+        TW_BUCKETS="50000"
     elif [ "$TOTAL_MEM" -le 1024 ]; then
         VM_TIER="基础级(1GB)"
         RMEM_MAX="33554432"   # 32MB
         WMEM_MAX="33554432"
         TCP_MEM_MAX="33554432"
         SOMAXCONN="16384"
-        FILE_MAX="524288"
-        CONNTRACK_MAX="262144"
+        FILE_MAX="131072"
+        CONNTRACK_MAX="65536"
+        TW_BUCKETS="100000"
     elif [ "$TOTAL_MEM" -le 4096 ]; then
         VM_TIER="进阶级(2GB-4GB)"
+        RMEM_MAX="33554432"   # 32MB
+        WMEM_MAX="33554432"
+        TCP_MEM_MAX="33554432"
+        SOMAXCONN="16384"
+        FILE_MAX="262144"
+        CONNTRACK_MAX="131072"
+        TW_BUCKETS="200000"
+    else
+        VM_TIER="专业级(>4GB)"
         RMEM_MAX="67108864"   # 64MB
         WMEM_MAX="67108864"
         TCP_MEM_MAX="67108864"
         SOMAXCONN="32768"
-        FILE_MAX="1048576"
-        CONNTRACK_MAX="524288"
-    else
-        VM_TIER="专业级(>4GB)"
-        # 限制最大缓冲区，避免单连接吃光内存，注重并发总量
-        RMEM_MAX="134217728"  # 128MB
-        WMEM_MAX="134217728"
-        TCP_MEM_MAX="134217728"
-        SOMAXCONN="65535"
-        FILE_MAX="2097152"
-        CONNTRACK_MAX="1048576" # 100万连接足够绝大多数场景，过大浪费内核内存
+        FILE_MAX="524288"
+        CONNTRACK_MAX="262144"
+        TW_BUCKETS="300000"
     fi
 }
 
@@ -157,11 +153,11 @@ EOF
     add_conf "net.ipv4.tcp_timestamps" "1" "开启时间戳 (配合 reuse 必须)"
     add_conf "net.ipv4.tcp_fin_timeout" "30" "缩短 FIN_WAIT 时间"
     add_conf "net.ipv4.ip_local_port_range" "10000 65535" "扩大本地端口范围"
-    add_conf "net.ipv4.tcp_max_tw_buckets" "500000" "允许更多 TIME_WAIT socket 存在"
+    add_conf "net.ipv4.tcp_max_tw_buckets" "$TW_BUCKETS" "允许更多 TIME_WAIT socket 存在"
 
     # 5. TCP Keepalive (快速剔除死链)
-    add_conf "net.ipv4.tcp_keepalive_time" "120" "TCP保活时间 (2分钟)"
-    add_conf "net.ipv4.tcp_keepalive_intvl" "20" "探测间隔"
+    add_conf "net.ipv4.tcp_keepalive_time" "300" "TCP保活时间 (5分钟)"
+    add_conf "net.ipv4.tcp_keepalive_intvl" "30" "探测间隔"
     add_conf "net.ipv4.tcp_keepalive_probes" "3" "探测次数"
 
     # 6. 连接跟踪 (Conntrack)
